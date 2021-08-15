@@ -34,7 +34,7 @@ echo "/swapfile1 swap swap defaults 0 0" | tee -a /etc/fstab
 
 mkdir -p "$UBUNTU_HOME/teslamate/config"
 
-echo "SSL_EXPIRE_EMAIL=${SSL_EXPIRE_EMAIL:-tslamt$(date +%s)@example.com}
+echo "SSL_EXPIRE_EMAIL=${SSL_EXPIRE_EMAIL:-tslamt$(date +%s)@tslamt$(date +%s)dmn.com}
 TESLAMATE_MAIN_DOMAIN=$MAIN_DOMAIN
 CONFIG_BASE=$UBUNTU_HOME/teslamate/config
 TESLAMATE_TZ=$TESLAMATE_TZ
