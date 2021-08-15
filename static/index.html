@@ -8,14 +8,14 @@
 		<link rel="stylesheet" href="style.css">
 		<link href="iconic/css/iconic.css" rel="stylesheet">
 
-		<title>Launch BTCPayServer on LunaNode</title>
+		<title>Launch Teslamate on LunaNode</title>
 	</head>
 	<body>
 		<div class="container">
-			<h2>Launch BTCPayServer on LunaNode</h2>
+			<h2>Launch Teslamate on LunaNode</h2>
 			<div id="errorbar" class="alert alert-danger" style="display:none"></div>
 			<div id="step1" class="stepdiv">
-				<p>For one cryptocurrency with m.2 VM, the total monthly price will be $8.80. Monitor your recurring charges on the <a href="https://dynamic.lunanode.com/panel/">Dashboard</a>.</p>
+				<p>The total monthly price will be $3.50. Monitor your recurring charges on the <a href="https://dynamic.lunanode.com/panel/">Dashboard</a>.</p>
 				<p>To get started, enter your <a href="https://www.lunanode.com">LunaNode</a> API key details below. You'll need to first <a href="https://dynamic.lunanode.com/panel/api">create an API key</a>.</p>
 				<form id="step1_form">
 					<div class="form-group row">
@@ -49,8 +49,8 @@
 					<div class="form-group row">
 						<label for="hostname" class="col-sm-2 col-form-label">Hostname</label>
 						<div class="col-sm-10">
-							<input type="text" class="form-control" id="hostname" placeholder="e.g. btcpay.example.com">
-							<small class="form-text text-muted">If you own a domain name like 'yourdomain.com', you can enter a hostname like 'btcpay.yourdomain.com' here. You will need to first login to your domain name registrar and create a DNS 'A' record pointing 'btcpay.yourdomain.com' to the IP shown above.</small>
+							<input type="text" class="form-control" id="hostname" placeholder="e.g. teslamate.example.com">
+							<small class="form-text text-muted">If you own a domain name like 'yourdomain.com', you can enter a hostname like 'teslamate.yourdomain.com' here. You will need to first login to your domain name registrar and create a DNS 'A' record pointing 'teslamate.yourdomain.com' to the IP shown above.</small>
 						</div>
 					</div>
 					<div class="form-group row">
@@ -69,23 +69,6 @@
 				<p>Almost there! Just need a few final details before provisioning your VM:</p>
 				<form id="step3_form">
 					<div class="form-group row">
-						<label for="coins" class="col-sm-2 col-form-label">Supported Cryptocurrencies</label>
-						<div class="col-sm-10">
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="btc" checked /> Bitcoin (BTC)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="lbtc" /> Liquid (LBTC)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="ltc" /> Litecoin (LTC)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="grs" /> Groestlcoin (GRS)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="btg" /> Bitcoin Gold (BTG)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="ftc" /> Feathercoin (FTC)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="via" /> Viacoin (VIA)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="doge" /> Dogecoin (DOGE)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="mona" /> MonaCoin (MONA)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="btx" /> Bitcore (BTX)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="dash" /> Dash (DASH)</div>
-							<div class="form-check"><input type="checkbox" class="supportedcoins" data-coin="xmr" /> Monero (XMR)</div>
-						</div>
-					</div>
-					<div class="form-group row">
 						<label for="email" class="col-sm-2 col-form-label">E-mail Address (optional)</label>
 						<div class="col-sm-10">
 							<input type="text" class="form-control" id="email">
@@ -93,51 +76,42 @@
 						</div>
 					</div>
 					<div class="form-group row">
-						<label for="network" class="col-sm-2 col-form-label">Network</label>
+						<label for="tz" class="col-sm-2 col-form-label">Timezone (TZ format)</label>
 						<div class="col-sm-10">
-							<select class="form-control" id="network">
-								<option value="mainnet">mainnet</option>
-								<option value="testnet">testnet</option>
-								<option value="regtest">regtest</option>
-							</select>
+							<input type="text" class="form-control" id="tz" value="Etc/UTC">
+							<small id="tzHelp" class="form-text text-muted">This will decide the timezone your data will show in. (See wikipedia for list of valid TZ timezones: <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">https://en.wikipedia.org/wiki/List_of_tz_database_time_zones</a>)</small>
 						</div>
 					</div>
 					<div class="form-group row">
-						<label for="lightning" class="col-sm-2 col-form-label">Lightning Implementation</label>
+						<label for="nginxPassword" class="col-sm-2 col-form-label">Teslamate Password</label>
 						<div class="col-sm-10">
-							<select class="form-control" id="lightning">
-								<option value="" selected>None</option>
-								<option value="lnd">lnd</option>
-								<option value="clightning">c-lightning</option>
-							</select>
+							<input type="password" class="form-control" id="nginxPassword">
+							<small id="nginxPasswordHelp" class="form-text text-muted">This will be used to access your Teslamate site. DO NOT USE YOUR TESLA ACCOUNT PASSWORD.</small>
+						</div>
+						<label for="nginxPassword2" class="col-sm-2 col-form-label">Confirm Password</label>
+						<div class="col-sm-10">
+							<input type="password" class="form-control" id="nginxPassword2">
 						</div>
 					</div>
 					<div class="form-group row">
 						<label for="plan" class="col-sm-2 col-form-label">VM Plan</label>
 						<div class="col-sm-10">
 							<select class="form-control" id="plan">
-								<option value="m.2" data-price="7">m.2 (2 GB RAM)</option>
-								<option value="m.4" selected data-price="14">m.4 (4 GB RAM)</option>
-								<option value="m.8" data-price="28">m.8 (8 GB RAM)</option>
+								<option value="m.1s" selected data-price="3.5">m.1s</option>
+								<option value="m.2" data-price="7">m.2</option>
+								<option value="m.4" data-price="14">m.4</option>
+								<option value="s.1" data-price="7">s.1</option>
 								<option value="s.2" data-price="14">s.2</option>
 								<option value="s.4" data-price="28">s.4</option>
-								<option value="c.1" data-price="20">c.1</option>
 							</select>
-							<small id="planHelp" class="form-text text-muted">VM plan, see <a href="https://dynamic.lunanode.com/info">https://dynamic.lunanode.com/info</a>.
-							<br />If using two or more coins, or Lightning, use m.4, since 2 GB RAM is insufficient. If using four or more coins, use m.8.</small>
+							<small id="planHelp" class="form-text text-muted">VM plan, see <a href="https://dynamic.lunanode.com/info">https://dynamic.lunanode.com/info</a>.</small>
 						</div>
 					</div>
 					<div class="form-group row">
 						<label for="price" class="col-sm-2 col-form-label">Monthly Price</label>
 						<div class="col-sm-10">
 							<input type="text" class="form-control" id="price" disabled>
-							<small id="priceHelp" class="form-text text-muted">We'll create one 60 GB volume for each cryptocurrency to store the blockchain data, so the total price is the VM price plus this storage cost.</small>
-						</div>
-					</div>
-					<div class="form-group row">
-						<label for="coins" class="col-sm-2 col-form-label">Acceleration</label>
-						<div class="col-sm-10">
-							<input type="checkbox" id="accelerate" checked /> Accelerate initial blockchain synchronization. This enables <a href="https://wiki.lunanode.com/index.php/Burstable_Resources">"Pay for Additional CPU Utilization"</a>. For example, for BTC-only synchronization, this reduces synchronization time from approximately 7 days to 2-3 days for a one-time roughly $3 cost.
+							<small id="priceHelp" class="form-text text-muted">We'll create one 15 GB volume, so the total price is the VM price plus this storage cost.</small>
 						</div>
 					</div>
 					<div class="form-group row">
@@ -153,28 +127,21 @@
 						</div>
 					</div>
 					<div class="form-group row">
-						<label for="alias" class="col-sm-2 col-form-label">Lightning Alias (optional)</label>
-						<div class="col-sm-10">
-							<input type="text" class="form-control" id="alias">
-							<small id="emailHelp" class="form-text text-muted">Public alias of your lightning node.</small>
-						</div>
-					</div>
-					<div class="form-group row">
 						<label for="repository" class="col-sm-2 col-form-label">Repository</label>
 						<div class="col-sm-10">
-							<input type="text" class="form-control" id="repository" value="https://github.com/btcpayserver/btcpayserver-docker">
+							<input type="text" class="form-control" id="repository" value="https://github.com/junderw/teslamate-docker">
 						</div>
 					</div>
 					<div class="form-group row">
 						<label for="branch" class="col-sm-2 col-form-label">Branch</label>
 						<div class="col-sm-10">
-							<input type="text" class="form-control" id="branch" value="master">
+							<input type="text" class="form-control" id="branch" value="main">
 						</div>
 					</div>
 				</form>
 			</div>
 			<div id="step4" class="stepdiv" style="display:none">
-				<p>Your VM has launched successfully, and BTCPayServer is being setup! After about five minutes, it'll be ready at <a id="step4_hostname" href=""></a>.</p>
+				<p>Your VM has launched successfully, and Teslamate is being setup! After about ten minutes, it'll be ready at <a id="step4_hostname" href=""></a>.</p>
 			</div>
 			<div id="loading" class="stepdiv" style="display:none">
 				<img src="loading.gif" width="200px" height="200px" />

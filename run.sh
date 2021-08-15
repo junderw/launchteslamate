@@ -1,140 +1,75 @@
 #!/bin/bash
+set -euo pipefail
 
-cat <<EOM >/root/run.py
-import os
-import subprocess
-import sys
-import time
+# Just in case things need time to start up
+sleep 10
 
-hostname = '[HOSTNAME]'
-network = '[NETWORK]'
-email = '[EMAIL]'
-repository = '[REPOSITORY]'
-branch = '[BRANCH]'
-coinstr = '[COINS]'
-lightning = '[LIGHTNING]'
-alias = '[ALIAS]'
+MAIN_DOMAIN=[HOSTNAME]
+MY_GLOBAL_IP=[IP]
+SSL_EXPIRE_EMAIL=[EMAIL]
+NGINX_BASIC_AUTH=[NGINXPASSWORD]
+TESLAMATE_TZ=[TZ]
+REPOSITORY=[REPOSITORY]
+BRANCH=[BRANCH]
 
-reverseproxy = 'nginx'
-acme_uri = 'https://acme-v01.api.letsencrypt.org/directory'
-coinmap = {
-	'btc': '/var/lib/docker/volumes/generated_bitcoin_datadir/_data/blocks',
-	'lbtc': '/var/lib/docker/volumes/generated_elements_datadir/_data/liquidv1/blocks',
-	'ltc': '/var/lib/docker/volumes/generated_litecoin_datadir/_data/blocks',
-	'grs': '/var/lib/docker/volumes/generated_groestlcoin_datadir/_data/blocks/',
-	'btg': '/var/lib/docker/volumes/generated_bgold_datadir/_data/blocks',
-	'ftc': '/var/lib/docker/volumes/generated_feathercoin_datadir/_data/blocks',
-	'via': '/var/lib/docker/volumes/generated_viacoin_datadir/_data/blocks',
-	'doge': '/var/lib/docker/volumes/generated_dogecoin_datadir/_data/blocks',
-	'mona': '/var/lib/docker/volumes/generated_monacoin_datadir/_data/blocks',
-	'btx': '/var/lib/docker/volumes/generated_bitcore_datadir/_data/blocks/',
-	'dash': '/var/lib/docker/volumes/generated_dash_datadir/_data/blocks/',
-	'xmr': '/var/lib/docker/volumes/generated_xmr_data/_data/lmdb/',
-}
-coinmapTestnet = {
-	'btc': '/var/lib/docker/volumes/generated_bitcoin_datadir/_data/testnet3/blocks',
-	'lbtc': '/var/lib/docker/volumes/generated_elements_datadir/_data/testnet3/blocks',
-	'ltc': '/var/lib/docker/volumes/generated_litecoin_datadir/_data/testnet4/blocks',
-	'grs': '/var/lib/docker/volumes/generated_groestlcoin_datadir/_data/testnet3/blocks/',
-	'btg': '/var/lib/docker/volumes/generated_bgold_datadir/_data/testnet3/blocks',
-	'ftc': '/var/lib/docker/volumes/generated_feathercoin_datadir/_data/testnet4/blocks',
-	'via': '/var/lib/docker/volumes/generated_viacoin_datadir/_data/testnet3/blocks',
-	'doge': '/var/lib/docker/volumes/generated_dogecoin_datadir/_data/testnet3/blocks',
-	'mona': '/var/lib/docker/volumes/generated_monacoin_datadir/_data/testnet3/blocks',
-	'btx': '/var/lib/docker/volumes/generated_bitcore_datadir/_data/testnet3/blocks/',
-	'dash': '/var/lib/docker/volumes/generated_dash_datadir/_data/testnet3/blocks/',
-	'xmr': '/var/lib/docker/volumes/generated_xmr_data-1/_data/testnet3/x/',
-}
+UBUNTU_HOME=/home/ubuntu
 
-# clone btcpayserver-docker
-if not os.path.exists('/root/btcpayserver-docker'):
-	subprocess.call(['git', 'clone', repository, 'btcpayserver-docker'], cwd='/root/')
-	subprocess.call(['git', 'checkout', branch], cwd='/root/btcpayserver-docker')
+echo "Starting script..."
 
-env = os.environ.copy()
-coins = coinstr.split(',')
+# Make sure we can get the lets encrypt cert properly
+MAIN_DOMAIN_IP=$(dig @resolver4.opendns.com $MAIN_DOMAIN +short)
+if [[ "$MY_GLOBAL_IP" != "$MAIN_DOMAIN_IP" ]]; then
+  echo "Please set Main site domain to $MAIN_DOMAIN this server Global IP: $MY_GLOBAL_IP" 1>&2
+  exit 1
+fi
 
-# setup volumes for coins (if not already setup)
-mount_output = subprocess.check_output(['mount']).decode('utf-8')
-if 'vdc' not in mount_output:
-	volumes = []
-	for fname in os.listdir('/dev'):
-		if len(fname) == 3 and fname.startswith('vd') and fname not in ['vda', 'vdb']:
-			volumes.append(fname)
-	for coin in coins:
-		if coin not in coinmap or len(volumes) == 0:
-			continue
-		volume = '/dev/' + volumes[0]
-		volumes = volumes[1:]
-		if network == 'testnet':
-			path = coinmapTestnet[coin]
-		else:
-			path = coinmap[coin]
-		try:
-			os.makedirs(path, 0o755)
-		except FileExistsError:
-			pass
-		subprocess.call(['mkfs.ext4', volume])
-		subprocess.call(['mount', volume, path])
-		uuid = subprocess.check_output(['blkid', volume]).decode('utf-8').split('UUID="')[1].split('"')[0]
-		with open('/etc/fstab', 'a') as f:
-			f.write("UUID={} {} ext4 defaults 0 2\n".format(uuid, path))
+# create 1 GB of swap memory
+dd if=/dev/zero of=/swapfile1 bs=1024 count=1048576
+chmod 600 /swapfile1
+mkswap /swapfile1
+swapon /swapfile1
 
-		# Monero needs 777 permission (or chown to user) since it runs as different user.
-		# We run it here since os.makedirs doesn't seem to work right.
-		if coin == 'xmr':
-			subprocess.call(['chmod', '-R', '777', '/var/lib/docker/volumes/generated_xmr_data/'])
+# persist swap memory
+echo "/swapfile1 swap swap defaults 0 0" | tee -a /etc/fstab
 
-crypto_counter = 1
-for coin in coins:
-	if coin in coinmap:
-		env['BTCPAYGEN_CRYPTO{}'.format(crypto_counter)] = coin
-		crypto_counter += 1
+mkdir -p "$UBUNTU_HOME/teslamate/config"
 
-# create SSH key
-subprocess.call(['ssh-keygen', '-t', 'rsa', '-f', '/root/.ssh/id_rsa_btcpay', '-q', '-P', '', '-m', 'PEM'])
-with open('/root/.ssh/id_rsa_btcpay.pub', 'r') as f:
-	btcpay_sshkey = f.read()
-with open('/root/.ssh/authorized_keys', 'a') as f:
-	f.write(btcpay_sshkey)
+echo "SSL_EXPIRE_EMAIL=${SSL_EXPIRE_EMAIL:-tslamt$(date +%s)@example.com}
+TESLAMATE_MAIN_DOMAIN=$MAIN_DOMAIN
+CONFIG_BASE=$UBUNTU_HOME/teslamate/config
+TESLAMATE_TZ=$TESLAMATE_TZ
+INTERNAL_PASSWORD=$(openssl rand -hex 20)
+" > "$UBUNTU_HOME/teslamate/.env"
 
-env['BTCPAY_HOST'] = hostname
-env['NBITCOIN_NETWORK'] = network
-env['LETSENCRYPT_EMAIL'] = email
-env['BTCPAY_DOCKER_REPO'] = repository
-env['BTCPAY_DOCKER_REPO_BRANCH'] = branch
-env['BTCPAYGEN_LIGHTNING'] = lightning
-env['LIGHTNING_ALIAS'] = alias
-env['BTCPAYGEN_ADDITIONAL_FRAGMENTS'] = 'opt-save-storage-s'
-env['BTCPAY_ENABLE_SSH'] = 'true'
-env['BTCPAY_HOST_SSHKEYFILE'] = '/root/.ssh/id_rsa_btcpay'
+chown -R ubuntu:ubuntu "$UBUNTU_HOME/teslamate"
 
-for i in range(5):
-	popen = subprocess.Popen(
-		['bash', '-c', '. ./btcpay-setup.sh -i'],
-		stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-		env=env, cwd='/root/btcpayserver-docker'
-	)
-	had_error = False
-	for line in popen.stdout:
-		sys.stdout.buffer.write(b'[btcpay-setup] ')
-		sys.stdout.buffer.write(line)
-		if b'Could not resolve host:' in line or b'docker-compose: command not found' in line:
-			had_error = True
-	popen.stdout.close()
-	return_code = popen.wait()
-	if return_code == 0 and not had_error:
-		break
-	else:
-		print('launcher: btcpay-setup script had error, retrying in 10 seconds')
-		time.sleep(10)
-		continue
-EOM
+mkdir -p $UBUNTU_HOME/teslamate/config/teslamate-grafana-data
+mkdir -p $UBUNTU_HOME/teslamate/config/nginx/htpasswd
 
-# for now this should be enough time to attach volumes
-# later on we may need to do something more robust
-sleep 20
-/usr/bin/python3 /root/run.py
+# Needed to fix issues with permissions
+chown 472:root $UBUNTU_HOME/teslamate/config/teslamate-grafana-data
+
+apt update
+apt upgrade -y
+apt install apache2-utils -y
+
+htpasswd -c -b $UBUNTU_HOME/teslamate/config/nginx/htpasswd/$MAIN_DOMAIN admin $NGINX_BASIC_AUTH
+
+# Grab docker-compose from gist
+curl -fsSL ${REPOSITORY/github.com/raw.githubusercontent.com}/${BRANCH}/docker-compose.yml -o "$UBUNTU_HOME/teslamate/docker-compose.yml"
+
+# Install docker
+curl -fsSL https://get.docker.com -o "$UBUNTU_HOME/get-docker.sh"
+sh "$UBUNTU_HOME/get-docker.sh"
+
+# Install docker-compose
+curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+
+cd "$UBUNTU_HOME/teslamate"
+
+docker-compose up -d
 
 [ -x "$(command -v /etc/init.d/sshd)" ] && nohup /etc/init.d/sshd restart &
 [ -x "$(command -v /etc/init.d/ssh)" ] && nohup /etc/init.d/ssh restart &

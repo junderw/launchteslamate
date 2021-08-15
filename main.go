@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const IMAGE_ID = 424056
+const IMAGE_ID = 304052 // Ubuntu 20.04 64-bit (template)
 
 type ErrorResponse struct {
 	Error string `json:"error"`
@@ -129,26 +129,22 @@ func main() {
 		apiKey := r.PostForm.Get("api_key")
 		ip := r.PostForm.Get("ip")
 		hostname := r.PostForm.Get("hostname")
+		nginxPassword := r.PostForm.Get("nginxPassword")
+		tz := r.PostForm.Get("tz")
 		sshKey := r.PostForm.Get("sshkey")
 		email := r.PostForm.Get("email")
-		network := r.PostForm.Get("network")
-		coins := r.PostForm.Get("coins")
-		lightning := r.PostForm.Get("lightning")
-		alias := r.PostForm.Get("alias")
 		repository := r.PostForm.Get("repository")
 		branch := r.PostForm.Get("branch")
 		plan := r.PostForm.Get("plan")
-		accelerate := r.PostForm.Get("accelerate")
 
 		remoteIP := r.RemoteAddr
 
 		myscript := script
 		myscript = strings.Replace(myscript, "[HOSTNAME]", hostname, -1)
+		myscript = strings.Replace(myscript, "[IP]", ip, -1)
 		myscript = strings.Replace(myscript, "[EMAIL]", email, -1)
-		myscript = strings.Replace(myscript, "[NETWORK]", network, -1)
-		myscript = strings.Replace(myscript, "[COINS]", coins, -1)
-		myscript = strings.Replace(myscript, "[LIGHTNING]", lightning, -1)
-		myscript = strings.Replace(myscript, "[ALIAS]", alias, -1)
+		myscript = strings.Replace(myscript, "[NGINXPASSWORD]", nginxPassword, -1)
+		myscript = strings.Replace(myscript, "[TZ]", tz, -1)
 		myscript = strings.Replace(myscript, "[REPOSITORY]", repository, -1)
 		myscript = strings.Replace(myscript, "[BRANCH]", branch, -1)
 
@@ -159,23 +155,8 @@ func main() {
 			}
 		}
 
-		// create volumes
-		coinlist := strings.Split(coins, ",")
-		log.Printf("[%s] creating volumes (hostname: %s, coins: %s, plan: %s)", remoteIP, hostname, coins, plan)
-		var volumeIDs []string
-		for _, coin := range coinlist {
-			volumeID, err, cleanupFunc := createVolume(apiID, apiKey, hostname, coin, "60")
-			if err != nil {
-				cleanup()
-				errorResponse(w, r, err.Error())
-				return
-			}
-			cleanupFuncs = append(cleanupFuncs, cleanupFunc)
-			volumeIDs = append(volumeIDs, volumeID)
-		}
-
 		// create DNS if desired
-		if strings.HasSuffix(hostname, ".lndyn.com") && strings.HasPrefix(hostname, "btcpay") && len(hostname) == 22 {
+		if strings.HasSuffix(hostname, ".lndyn.com") && strings.HasPrefix(hostname, "teslamate") && len(hostname) == 26 {
 			err := request(apiID, apiKey, "dns", "dyn-add", map[string]string{
 				"name": strings.Split(hostname, ".")[0],
 				"ip": ip,
@@ -256,7 +237,7 @@ func main() {
 		// add startup script
 		var scriptResponse LunaScriptCreate
 		err = request(apiID, apiKey, "script", "create", map[string]string{
-			"name": "tmp-btcpayserver",
+			"name": "tmp-teslamate",
 			"content": myscript,
 		}, &scriptResponse)
 		if err != nil {
@@ -309,24 +290,6 @@ func main() {
 			cleanup()
 			errorResponse(w, r, "timed out waiting for VM creation")
 			return
-		}
-
-		// attach volumes
-		for _, volumeID := range volumeIDs {
-			request(apiID, apiKey, "volume", "attach", map[string]string{
-				"vm_id": vmResponse.VmID,
-				"volume_id": volumeID,
-				"target": "/dev/vda",
-			}, nil)
-		}
-
-		// enable charge_for_cpu if desired
-		if accelerate == "yes" {
-			request(apiID, apiKey, "vm", "set-fairshare", map[string]string{
-				"vm_id": vmResponse.VmID,
-				"charge_for_cpu": "yes",
-				"fairshare_nolend": "no",
-			}, nil)
 		}
 
 		jsonResponse(w, NullResponse{})
@@ -442,43 +405,4 @@ func getFreeFloatingIP(apiID string, apiKey string, region string) (string, erro
 		}
 	}
 	return "", nil
-}
-
-func createVolume(apiID string, apiKey string, hostname string, coin string, size string) (string, error, func()) {
-	var createResponse LunaVolumeCreate
-	err := request(apiID, apiKey, "volume", "create", map[string]string{
-		"region": "toronto",
-		"label": fmt.Sprintf("%s-%s", hostname, coin),
-		"size": size,
-	}, &createResponse)
-	if err != nil {
-		return "", err, nil
-	}
-	cleanup := func() {
-		request(apiID, apiKey, "volume", "delete", map[string]string{
-			"volume_id": createResponse.VolumeID,
-		}, nil)
-	}
-
-	done := false
-	for i := 0; i < 10; i++ {
-		time.Sleep(2*time.Second)
-		var infoResponse LunaVolumeInfo
-		err := request(apiID, apiKey, "volume", "info", map[string]string{
-			"volume_id": createResponse.VolumeID,
-		}, &infoResponse)
-		if err != nil {
-			cleanup()
-			return "", err, nil
-		}
-		if infoResponse.Volume.Status == "available" {
-			done = true
-			break
-		}
-	}
-	if !done {
-		cleanup()
-		return "", fmt.Errorf("timed out waiting for volume creation"), nil
-	}
-	return createResponse.VolumeID, nil, cleanup
 }
