@@ -123,6 +123,23 @@ $(document).ready(function() {
 			$('#step4_hostname').attr('href', 'https://' + hostname);
 			$('#step4_hostname').text(hostname);
 			showStep('step4');
+
+			// Wait for server to be up
+			var timeleft = { minutes: 10, seconds: 0 };
+			var INTERVAL_CODE = setInterval(function() {
+				if (timeleft.minutes < 0) {
+					clearInterval(INTERVAL_CODE);
+					return;
+				}
+				$('#timer').text(timeleft.minutes + ' minutes ' + timeleft.seconds + ' seconds left');
+				if (timeleft.seconds <= 0) {
+					timeleft.minutes--;
+					timeleft.seconds = 59;
+				} else {
+					timeleft.seconds--;
+				}
+			}, 1 * 1000);
+
 		}, 'json');
 	});
 

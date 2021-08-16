@@ -6,7 +6,6 @@
 
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css" integrity="sha384-9gVQ4dYFwwWSjIDZnLEWnxCjeSWFphJiwGPXr1jddIhOegiu1FwO5qRGvFXOdJZ4" crossorigin="anonymous">
 		<link rel="stylesheet" href="style.css">
-		<link href="iconic/css/iconic.css" rel="stylesheet">
 
 		<title>Launch Teslamate on LunaNode</title>
 	</head>
@@ -27,7 +26,7 @@
 					<div class="form-group row">
 						<label for="api_key" class="col-sm-2 col-form-label">API Key</label>
 						<div class="col-sm-10">
-							<input type="text" class="form-control" id="api_key">
+							<input type="password" class="form-control" id="api_key" autocomplete="off">
 						</div>
 					</div>
 					<div class="form-group row">
@@ -85,12 +84,12 @@
 					<div class="form-group row">
 						<label for="nginxPassword" class="col-sm-2 col-form-label">Teslamate Password</label>
 						<div class="col-sm-10">
-							<input type="password" class="form-control" id="nginxPassword">
+							<input type="password" class="form-control" id="nginxPassword" autocomplete="off">
 							<small id="nginxPasswordHelp" class="form-text text-muted">This will be used to access your Teslamate site. DO NOT USE YOUR TESLA ACCOUNT PASSWORD.</small>
 						</div>
 						<label for="nginxPassword2" class="col-sm-2 col-form-label">Confirm Password</label>
 						<div class="col-sm-10">
-							<input type="password" class="form-control" id="nginxPassword2">
+							<input type="password" class="form-control" id="nginxPassword2" autocomplete="off">
 						</div>
 					</div>
 					<div class="form-group row">
@@ -142,6 +141,7 @@
 			</div>
 			<div id="step4" class="stepdiv" style="display:none">
 				<p>Your VM has launched successfully, and Teslamate is being setup! After about ten minutes, it'll be ready at <a id="step4_hostname" href=""></a>.</p>
+				<p>Countdown: <div id="timer"></div></p>
 			</div>
 			<div id="loading" class="stepdiv" style="display:none">
 				<img src="loading.gif" width="200px" height="200px" />
@@ -155,6 +155,6 @@
 		<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js" integrity="sha384-cs/chFZiN24E4KMATLdqdvsezGxaGsi4hLGOzlXwp5UZB1LY//20VyM2taTB4QvJ" crossorigin="anonymous"></script>
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js" integrity="sha384-uefMccjFJAIv6A+rW+L4AHf99KvxDjWSu1z9VI8SKNVmz4sk7buKt/6v9KI65qnm" crossorigin="anonymous"></script>
-		<script src="index.js?version=9"></script>
+		<script src="index.js"></script>
 	</body>
 </html>
