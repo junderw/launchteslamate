@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const IMAGE_ID = 304052 // Ubuntu 20.04 64-bit (template)
+const IMAGE_ID = 304057 // Ubuntu 20.04 64-bit (template)
 
 type ErrorResponse struct {
 	Error string `json:"error"`
