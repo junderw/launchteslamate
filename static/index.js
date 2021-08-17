@@ -145,6 +145,7 @@ $(document).ready(function() {
 
 			$('#step4_hostname').attr('href', 'https://' + hostname);
 			$('#step4_hostname').text(hostname);
+			$('#urls_content').html('Web App: https://' + hostname + '<br>Dashboards: https://' + hostname + '/grafana');
 			showStep('step4');
 
 			// Wait for server to be up
