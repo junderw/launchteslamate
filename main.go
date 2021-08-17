@@ -101,20 +101,20 @@ func main() {
 		r.ParseForm()
 		apiID := r.PostForm.Get("api_id")
 		apiKey := r.PostForm.Get("api_key")
-		ip, err := getFreeFloatingIP(apiID, apiKey, "toronto")
+		ip, err := getFreeFloatingIP(apiID, apiKey, "montreal")
 		if err != nil {
 			errorResponse(w, r, err.Error())
 			return
 		}
 		if ip == "" {
 			err := request(apiID, apiKey, "floating", "add", map[string]string{
-				"region": "toronto",
+				"region": "montreal",
 			}, nil)
 			if err != nil {
 				errorResponse(w, r, err.Error())
 				return
 			}
-			ip, _ = getFreeFloatingIP(apiID, apiKey, "toronto")
+			ip, _ = getFreeFloatingIP(apiID, apiKey, "montreal")
 			if ip == "" {
 				errorResponse(w, r, "failed to get an external IP")
 				return
@@ -181,7 +181,7 @@ func main() {
 		}
 
 		params := map[string]string{
-			"region": "toronto",
+			"region": "montreal",
 			"plan_id": plan,
 			"image_id": strconv.Itoa(IMAGE_ID),
 			"ip": ip,
@@ -255,7 +255,7 @@ func main() {
 		// should we set network?
 		var networkResponse LunaNetworkList
 		request(apiID, apiKey, "network", "list", map[string]string{
-			"region": "toronto",
+			"region": "montreal",
 		}, &networkResponse)
 		if len(networkResponse.Networks) >= 1 {
 			params["net_id"] = networkResponse.Networks[0].NetID
