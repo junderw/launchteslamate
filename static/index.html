@@ -14,8 +14,8 @@
 			<h2>Launch Teslamate on LunaNode</h2>
 			<div id="errorbar" class="alert alert-danger" style="display:none"></div>
 			<div id="step1" class="stepdiv">
-				<p>The total monthly price will be $3.50. Monitor your recurring charges on the <a href="https://dynamic.lunanode.com/panel/">Dashboard</a>.</p>
-				<p>To get started, enter your <a href="https://www.lunanode.com">LunaNode</a> API key details below. You'll need to first <a href="https://dynamic.lunanode.com/panel/api">create an API key</a>.</p>
+				<p>The total monthly price will be $3.50. Monitor your recurring charges on the <a href="https://dynamic.lunanode.com/panel/" target=”_blank”>Dashboard</a>.</p>
+				<p>To get started, enter your <a href="https://www.lunanode.com" target=”_blank”>LunaNode</a> API key details below. You'll need to first <a href="https://dynamic.lunanode.com/panel/api" target=”_blank”>create an API key</a>.</p>
 				<form id="step1_form">
 					<div class="form-group row">
 						<label for="api_id" class="col-sm-2 col-form-label">API ID</label>
@@ -104,7 +104,7 @@
 								<option value="s.2" data-price="14">s.2</option>
 								<option value="s.4" data-price="28">s.4</option>
 							</select>
-							<small id="planHelp" class="form-text text-muted">VM plan, see <a href="https://dynamic.lunanode.com/info">https://dynamic.lunanode.com/info</a>.</small>
+							<small id="planHelp" class="form-text text-muted">VM plan, see <a href="https://dynamic.lunanode.com/info" target=”_blank”>https://dynamic.lunanode.com/info</a>.</small>
 						</div>
 					</div>
 					<div class="form-group row">
@@ -141,10 +141,25 @@
 				</form>
 			</div>
 			<div id="step4" class="stepdiv" style="display:none">
-				<p>Your VM has launched successfully, and Teslamate is being setup! After about ten minutes, it'll be ready at <a id="step4_hostname" href=""></a>.</p>
-				<p>Once you access the Teslamate instance, remember to open the Settings tab and paste in the following into the URLS fields:</p>
+				<p>
+					Your VM has launched successfully, and Teslamate is being setup!
+					After about ten minutes, it'll be ready at
+					<a id="step4_hostname" href="" target=”_blank”></a>.
+				</p>
+				<p>
+					When you visit the site, a basic auth entry window will pop up.
+					Enter admin for user, and the password you just set up.
+				</p>
+				<pre>Username: admin<br>Password: *******</pre>
+				<p>
+					Once you access the Teslamate instance, remember to open the
+					Settings tab and paste in the following into the URLS fields:
+				</p>
 				<pre id="urls_content"></pre>
-				<br>
+				<p>
+					On the main Teslamate screen, enter your Tesla Account username and password.
+					It will give you a captcha and ask for 2FA if you have that set.
+				</p>
 				<p>Countdown until server setup finish: <div id="timer"></div></p>
 			</div>
 			<div id="loading" class="stepdiv" style="display:none">
