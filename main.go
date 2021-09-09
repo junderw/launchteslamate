@@ -57,6 +57,28 @@ type LunaNetworkList struct {
 	} `json:"networks"`
 }
 
+type LunaPlan struct {
+	AllRegions       string   `json:"all_regions"`
+	Bandwidth        string   `json:"bandwidth"`
+	Category         string   `json:"category"`
+	CpuPoints        string   `json:"cpu_points"`
+	Name             string   `json:"name"`
+	PlanId           string   `json:"plan_id"`
+	Price            string   `json:"price"`
+	PriceMonthlyNice string   `json:"price_monthly_nice"`
+	PriceNice        string   `json:"price_nice"`
+	Ram              string   `json:"ram"`
+	Regions          []string `json:"regions"`
+	RegionsNice      string   `json:"regions_nice"`
+	Storage          string   `json:"storage"`
+	Vcpu             string   `json:"vcpu"`
+}
+
+type LunaPlanList struct {
+	Success string     `json:"success"`
+	Plans   []LunaPlan `json:"plans"`
+}
+
 type LunaFloatingList struct {
 	IPs []struct {
 		IP string `json:"ip"`
@@ -180,9 +202,25 @@ func main() {
 			})
 		}
 
+		// Get the plan id instead of using the plan name
+		var plansResponse LunaPlanList
+		err := request(apiID, apiKey, "plan", "list", nil, &plansResponse)
+		if err != nil {
+			cleanup()
+			errorResponse(w, r, "error fetching plans: "+err.Error())
+			return
+		}
+		filteredPlans := filterPlans(plan, plansResponse.Plans)
+		if len(filteredPlans) != 1 {
+			cleanup()
+			errorResponse(w, r, "error fetching plans: Expected 1 plan, got "+string(len(filteredPlans))+" for "+plan)
+			return
+		}
+		planObject := filteredPlans[0]
+
 		params := map[string]string{
 			"region": "montreal",
-			"plan_id": plan,
+			"plan_id": planObject.PlanId,
 			"image_id": strconv.Itoa(IMAGE_ID),
 			"ip": ip,
 			"hostname": hostname,
@@ -295,6 +333,16 @@ func main() {
 		jsonResponse(w, NullResponse{})
 	})
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+func filterPlans(planName string, plans []LunaPlan) []LunaPlan {
+	filtered := make([]LunaPlan, 0)
+	for _, plan := range plans {
+		if plan.Name == planName {
+			filtered = append(filtered, plan)
+		}
+	}
+	return filtered
 }
 
 func errorResponse(w http.ResponseWriter, r *http.Request, msg string) {
