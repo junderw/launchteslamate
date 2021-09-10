@@ -11,12 +11,37 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
 
-const IMAGE_ID = 304057 // Ubuntu 20.04 64-bit (template)
+type Region struct {
+	Name string
+	ImageId string
+}
+
+type Regions struct {
+	Toronto Region
+	Montreal Region
+	Roubaix Region
+}
+
+var REGIONS = Regions {
+	Toronto: Region{
+		Name: "toronto",
+		ImageId: "304052", // Ubuntu 20.04 64-bit (template)
+	},
+	Montreal: Region{
+		Name: "montreal",
+		ImageId: "304057", // Ubuntu 20.04 64-bit (template)
+	},
+	Roubaix: Region{
+		Name: "roubaix",
+		ImageId: "304058", // Ubuntu 20.04 64-bit (template)
+	},
+}
+
+var REGION = REGIONS.Roubaix
 
 type ErrorResponse struct {
 	Error string `json:"error"`
@@ -58,20 +83,9 @@ type LunaNetworkList struct {
 }
 
 type LunaPlan struct {
-	AllRegions       string   `json:"all_regions"`
-	Bandwidth        string   `json:"bandwidth"`
-	Category         string   `json:"category"`
-	CpuPoints        string   `json:"cpu_points"`
 	Name             string   `json:"name"`
 	PlanId           string   `json:"plan_id"`
-	Price            string   `json:"price"`
-	PriceMonthlyNice string   `json:"price_monthly_nice"`
-	PriceNice        string   `json:"price_nice"`
-	Ram              string   `json:"ram"`
 	Regions          []string `json:"regions"`
-	RegionsNice      string   `json:"regions_nice"`
-	Storage          string   `json:"storage"`
-	Vcpu             string   `json:"vcpu"`
 }
 
 type LunaPlanList struct {
@@ -123,20 +137,34 @@ func main() {
 		r.ParseForm()
 		apiID := r.PostForm.Get("api_id")
 		apiKey := r.PostForm.Get("api_key")
-		ip, err := getFreeFloatingIP(apiID, apiKey, "montreal")
+
+		plan, err := getPlan(apiID, apiKey, "m.1s")
+		if err != nil {
+			errorResponse(w, r, err.Error())
+			return
+		}
+		if hasRegionInPlan(plan, "roubaix") {
+			REGION = REGIONS.Roubaix
+		} else if hasRegionInPlan(plan, "montreal") {
+			REGION = REGIONS.Montreal
+		} else if hasRegionInPlan(plan, "toronto") {
+			REGION = REGIONS.Toronto
+		}
+
+		ip, err := getFreeFloatingIP(apiID, apiKey, REGION.Name)
 		if err != nil {
 			errorResponse(w, r, err.Error())
 			return
 		}
 		if ip == "" {
 			err := request(apiID, apiKey, "floating", "add", map[string]string{
-				"region": "montreal",
+				"region": REGION.Name,
 			}, nil)
 			if err != nil {
 				errorResponse(w, r, err.Error())
 				return
 			}
-			ip, _ = getFreeFloatingIP(apiID, apiKey, "montreal")
+			ip, _ = getFreeFloatingIP(apiID, apiKey, REGION.Name)
 			if ip == "" {
 				errorResponse(w, r, "failed to get an external IP")
 				return
@@ -202,26 +230,10 @@ func main() {
 			})
 		}
 
-		// Get the plan id instead of using the plan name
-		var plansResponse LunaPlanList
-		err := request(apiID, apiKey, "plan", "list", nil, &plansResponse)
-		if err != nil {
-			cleanup()
-			errorResponse(w, r, "error fetching plans: "+err.Error())
-			return
-		}
-		filteredPlans := filterPlans(plan, plansResponse.Plans)
-		if len(filteredPlans) != 1 {
-			cleanup()
-			errorResponse(w, r, "error fetching plans: Expected 1 plan, got "+string(len(filteredPlans))+" for "+plan)
-			return
-		}
-		planObject := filteredPlans[0]
-
 		params := map[string]string{
-			"region": "montreal",
-			"plan_id": planObject.PlanId,
-			"image_id": strconv.Itoa(IMAGE_ID),
+			"region": REGION.Name,
+			"plan_id": plan,
+			"image_id": REGION.ImageId,
 			"ip": ip,
 			"hostname": hostname,
 		}
@@ -293,7 +305,7 @@ func main() {
 		// should we set network?
 		var networkResponse LunaNetworkList
 		request(apiID, apiKey, "network", "list", map[string]string{
-			"region": "montreal",
+			"region": REGION.Name,
 		}, &networkResponse)
 		if len(networkResponse.Networks) >= 1 {
 			params["net_id"] = networkResponse.Networks[0].NetID
@@ -333,16 +345,6 @@ func main() {
 		jsonResponse(w, NullResponse{})
 	})
 	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func filterPlans(planName string, plans []LunaPlan) []LunaPlan {
-	filtered := make([]LunaPlan, 0)
-	for _, plan := range plans {
-		if plan.Name == planName {
-			filtered = append(filtered, plan)
-		}
-	}
-	return filtered
 }
 
 func errorResponse(w http.ResponseWriter, r *http.Request, msg string) {
@@ -453,4 +455,38 @@ func getFreeFloatingIP(apiID string, apiKey string, region string) (string, erro
 		}
 	}
 	return "", nil
+}
+
+func filterPlans(planName string, plans []LunaPlan) []LunaPlan {
+	filtered := make([]LunaPlan, 0)
+	for _, plan := range plans {
+		if plan.Name == planName {
+			filtered = append(filtered, plan)
+		}
+	}
+	return filtered
+}
+
+func getPlan(apiID string, apiKey string, planName string) (LunaPlan, error) {
+	// Check if region contains m.1s plan
+	var plansResponse LunaPlanList
+	err := request(apiID, apiKey, "plan", "list", nil, &plansResponse)
+	if err != nil {
+		return LunaPlan{}, err
+	}
+	filteredPlans := filterPlans(planName, plansResponse.Plans)
+	if len(filteredPlans) != 1 {
+		return LunaPlan{}, err
+	}
+	return filteredPlans[0], nil
+}
+
+func hasRegionInPlan(plan LunaPlan, region string) bool {
+	result := false
+	for _, rgn := range plan.Regions {
+		if region == rgn {
+			result = true
+		}
+	}
+	return result
 }
